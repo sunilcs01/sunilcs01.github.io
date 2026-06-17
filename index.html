@@ -85,7 +85,7 @@
             <p>필요한 서류나 파일을 업로드 해주세요. 담당자의 구글 드라이브로 안전하게 전송됩니다.</p>
             <form id="uploadForm" class="upload-form">
                 <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" class="file-input" required>
+                    <input type="file" id="fileInput" class="file-input" multiple required>
                 </div>
                 <button type="submit" id="submitBtn" class="upload-submit-btn">파일 업로드</button>
             </form>
@@ -98,10 +98,23 @@
         <p>&copy; 2026 Sunilcs. All rights reserved.</p>
     </footer>
 
-    <!-- Upload Script -->
-    <script>
-        // ★★★ 여기에 Google Apps Script 배포 후 발급받은 '웹앱 URL'을 붙여넣으세요 ★★★
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz8Wc4DsDfVKfMT9-UsGEF_utjFWxDI-seUw72jmWu3hh6SYC1B1WvHEe-OZjehuLon/exec';
+    <!-- Firebase Upload Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYjbJrOCkJ4LOlJp7wx_VmHW7cf_JIW-Y",
+            authDomain: "sunilcs-a7171.firebaseapp.com",
+            projectId: "sunilcs-a7171",
+            storageBucket: "sunilcs-a7171.firebasestorage.app",
+            messagingSenderId: "472399640344",
+            appId: "1:472399640344:web:2aeb130f32d872feb2906d",
+            measurementId: "G-SFE8LQNCXX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
 
         const form = document.getElementById('uploadForm');
         const fileInput = document.getElementById('fileInput');
@@ -111,77 +124,55 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const file = fileInput.files[0];
-            if (!file) {
+            const files = fileInput.files;
+            if (files.length === 0) {
                 showMessage('파일을 선택해주세요.', 'error');
                 return;
             }
 
-            if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                showMessage('개발자에게 받은 [구글 앱스 스크립트 연동 가이드]를 따라 URL을 입력해주세요.', 'error');
-                return;
-            }
-
-            // 파일 크기 제한 (선택사항, 50MB로 설정)
-            const MAX_FILE_SIZE = 50 * 1024 * 1024;
-            if (file.size > MAX_FILE_SIZE) {
-                showMessage('파일 크기는 50MB 이하여야 합니다.', 'error');
-                return;
-            }
-
             submitBtn.disabled = true;
-            submitBtn.textContent = '업로드 중... (창을 닫지 마세요)';
             showMessage('', '');
 
+            let completedCount = 0;
+            const progressArray = new Array(files.length).fill(0);
+
             try {
-                // 파일을 Base64로 변환
-                const reader = new FileReader();
-                reader.onload = async function() {
-                    const base64Data = reader.result.split(',')[1];
-                    const obj = {
-                        filename: file.name,
-                        mimeType: file.type,
-                        bytes: base64Data
-                    };
+                // 여러 파일을 동시에 업로드
+                const uploadPromises = Array.from(files).map((file, index) => {
+                    return new Promise((resolve, reject) => {
+                        const timestamp = new Date().getTime();
+                        const uniqueFilename = `${timestamp}_${file.name}`;
+                        const storageRef = ref(storage, 'uploads/' + uniqueFilename);
+                        const uploadTask = uploadBytesResumable(storageRef, file);
 
-                    try {
-                        const response = await fetch(GOOGLE_SCRIPT_URL, {
-                            redirect: "follow",
-                            method: 'POST',
-                            body: JSON.stringify(obj),
-                            headers: {
-                                "Content-Type": "text/plain;charset=utf-8",
-                            },
-                        });
+                        uploadTask.on('state_changed', 
+                            (snapshot) => {
+                                // 각 파일의 진행률을 바탕으로 전체 평균 진행률 계산
+                                progressArray[index] = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                const totalProgress = progressArray.reduce((a, b) => a + b, 0) / files.length;
+                                
+                                submitBtn.textContent = `업로드 중... ${Math.round(totalProgress)}% (${completedCount}/${files.length} 완료)`;
+                            }, 
+                            (error) => {
+                                reject(error);
+                            }, 
+                            () => {
+                                completedCount++;
+                                submitBtn.textContent = `업로드 중... 100% (${completedCount}/${files.length} 완료)`;
+                                getDownloadURL(uploadTask.snapshot.ref).then(resolve);
+                            }
+                        );
+                    });
+                });
 
-                        const result = await response.json();
-                        
-                        if (result.status === 'success') {
-                            showMessage('✅ 성공적으로 업로드되었습니다!', 'success');
-                            form.reset();
-                        } else {
-                            showMessage('❌ 업로드 실패: ' + (result.message || '알 수 없는 오류'), 'error');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        showMessage('❌ 업로드 중 오류가 발생했습니다.', 'error');
-                    } finally {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = '파일 업로드';
-                    }
-                };
+                await Promise.all(uploadPromises);
                 
-                reader.onerror = function() {
-                    showMessage('❌ 파일을 읽는 중 오류가 발생했습니다.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '파일 업로드';
-                }
-                
-                reader.readAsDataURL(file);
-
+                showMessage(`✅ 총 ${files.length}개의 파일이 성공적으로 업로드되었습니다!`, 'success');
+                form.reset();
             } catch (error) {
-                console.error(error);
-                showMessage('❌ 시스템 오류가 발생했습니다.', 'error');
+                console.error('Firebase Upload Error:', error);
+                showMessage('❌ 일부 파일 업로드 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '파일 업로드';
             }
