@@ -30,17 +30,27 @@
                 Sunilcs 토탈 솔루션으로 업무 효율을 극대화하세요.
             </p>
             
-            <!-- Download Button Linking directly to Google Drive to avoid ads -->
+            <!-- Download and Upload Buttons -->
             <div class="cta-wrapper">
-                <a href="downloads/host_ui.zip" class="cta-button" download>
-                    <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    솔루션 다운로드 (Windows)
-                </a>
-                <p class="cta-note">* 클릭 즉시 다운로드가 시작됩니다.</p>
+                <div class="cta-buttons">
+                    <a href="downloads/host_ui.zip" class="cta-button" download>
+                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        솔루션 다운로드 (Windows)
+                    </a>
+                    <a href="#uploadSection" class="cta-button upload-btn-secondary">
+                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        서류 제출하기
+                    </a>
+                </div>
+                <p class="cta-note">* 솔루션은 클릭 즉시 다운로드됩니다.</p>
             </div>
         </div>
 
@@ -68,9 +78,119 @@
         </div>
     </section>
 
+    <!-- Upload Section -->
+    <section id="uploadSection" class="upload-section">
+        <div class="upload-card">
+            <h3>서류 제출 (업무용)</h3>
+            <p>필요한 서류나 파일을 업로드 해주세요. 담당자의 구글 드라이브로 안전하게 전송됩니다.</p>
+            <form id="uploadForm" class="upload-form">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" required>
+                </div>
+                <button type="submit" id="submitBtn" class="upload-submit-btn">파일 업로드</button>
+            </form>
+            <div id="uploadStatus" class="upload-status"></div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer>
         <p>&copy; 2026 Sunilcs. All rights reserved.</p>
     </footer>
+
+    <!-- Upload Script -->
+    <script>
+        // ★★★ 여기에 Google Apps Script 배포 후 발급받은 '웹앱 URL'을 붙여넣으세요 ★★★
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz8Wc4DsDfVKfMT9-UsGEF_utjFWxDI-seUw72jmWu3hh6SYC1B1WvHEe-OZjehuLon/exec';
+
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('uploadStatus');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                showMessage('파일을 선택해주세요.', 'error');
+                return;
+            }
+
+            if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                showMessage('개발자에게 받은 [구글 앱스 스크립트 연동 가이드]를 따라 URL을 입력해주세요.', 'error');
+                return;
+            }
+
+            // 파일 크기 제한 (선택사항, 50MB로 설정)
+            const MAX_FILE_SIZE = 50 * 1024 * 1024;
+            if (file.size > MAX_FILE_SIZE) {
+                showMessage('파일 크기는 50MB 이하여야 합니다.', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '업로드 중... (창을 닫지 마세요)';
+            showMessage('', '');
+
+            try {
+                // 파일을 Base64로 변환
+                const reader = new FileReader();
+                reader.onload = async function() {
+                    const base64Data = reader.result.split(',')[1];
+                    const obj = {
+                        filename: file.name,
+                        mimeType: file.type,
+                        bytes: base64Data
+                    };
+
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            redirect: "follow",
+                            method: 'POST',
+                            body: JSON.stringify(obj),
+                            headers: {
+                                "Content-Type": "text/plain;charset=utf-8",
+                            },
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.status === 'success') {
+                            showMessage('✅ 성공적으로 업로드되었습니다!', 'success');
+                            form.reset();
+                        } else {
+                            showMessage('❌ 업로드 실패: ' + (result.message || '알 수 없는 오류'), 'error');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showMessage('❌ 업로드 중 오류가 발생했습니다.', 'error');
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '파일 업로드';
+                    }
+                };
+                
+                reader.onerror = function() {
+                    showMessage('❌ 파일을 읽는 중 오류가 발생했습니다.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '파일 업로드';
+                }
+                
+                reader.readAsDataURL(file);
+
+            } catch (error) {
+                console.error(error);
+                showMessage('❌ 시스템 오류가 발생했습니다.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '파일 업로드';
+            }
+        });
+
+        function showMessage(msg, type) {
+            statusDiv.textContent = msg;
+            statusDiv.className = 'upload-status ' + (type ? `status-${type}` : '');
+        }
+    </script>
 </body>
 </html>

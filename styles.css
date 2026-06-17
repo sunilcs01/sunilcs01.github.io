@@ -15,6 +15,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: var(--bg-color);
@@ -124,7 +128,15 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+}
+
+.cta-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .cta-button {
@@ -155,6 +167,24 @@ body {
 
 .cta-button:hover .download-icon {
     transform: translateY(2px);
+}
+
+.upload-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.upload-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.4);
+    /* For secondary button gradient change on hover */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
+}
+
+.upload-btn-secondary:hover .download-icon {
+    transform: translateY(-2px); /* Upload icon goes up */
 }
 
 .cta-note {
@@ -226,6 +256,119 @@ body {
     font-size: 0.95rem;
 }
 
+/* Upload Section */
+.upload-section {
+    max-width: 800px;
+    margin: 0 auto 120px;
+    padding: 0 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.upload-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 40px;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.upload-card:hover {
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+.upload-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.upload-card p {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.file-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.file-input:hover {
+    border-color: var(--accent-color);
+}
+
+.file-input::file-selector-button {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.file-input::file-selector-button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.upload-submit-btn {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+}
+
+.upload-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.6);
+}
+
+.upload-submit-btn:disabled {
+    background: #475569;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.upload-status {
+    margin-top: 20px;
+    font-size: 0.95rem;
+    min-height: 24px;
+    font-weight: 500;
+}
+.status-success { color: #4ade80; }
+.status-error { color: #f87171; }
+
 /* Footer */
 footer {
     text-align: center;
@@ -237,6 +380,12 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .cta-buttons {
+        flex-direction: column;
+        width: 100%;
+        gap: 12px;
+    }
+    
     .cta-button {
         width: 100%;
         justify-content: center;
