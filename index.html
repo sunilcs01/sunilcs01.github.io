@@ -277,7 +277,34 @@
 
                             for (const itemRef of res.items) {
                                 const url = await getDownloadURL(itemRef);
-                                window.location.href = url;
+                                
+                                try {
+                                    // 파일을 Blob으로 가져와서 원래 이름으로 다운로드 강제
+                                    const response = await fetch(url);
+                                    const blob = await response.blob();
+                                    const blobUrl = window.URL.createObjectURL(blob);
+                                    
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = blobUrl;
+                                    a.download = itemRef.name; // 원본 파일명 및 확장자
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(blobUrl);
+                                    document.body.removeChild(a);
+                                } catch (e) {
+                                    console.warn('Blob 다운로드 실패, 링크로 대체:', e);
+                                    // CORS 등으로 fetch가 실패할 경우 대체 방법
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = itemRef.name;
+                                    a.target = '_blank';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }
+
                                 await new Promise(resolve => setTimeout(resolve, 1500));
                             }
                         }
@@ -316,7 +343,32 @@
 
                     for (const itemRef of res.items) {
                         const url = await getDownloadURL(itemRef);
-                        window.location.href = url;
+                        
+                        try {
+                            const response = await fetch(url);
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = blobUrl;
+                            a.download = itemRef.name; // 원본 파일명 및 확장자
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(blobUrl);
+                            document.body.removeChild(a);
+                        } catch (e) {
+                            console.warn('Blob 다운로드 실패, 링크로 대체:', e);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = itemRef.name;
+                            a.target = '_blank';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+
                         await new Promise(resolve => setTimeout(resolve, 1500));
                     }
                 } catch (error) {
