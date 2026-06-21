@@ -272,20 +272,38 @@
                         alert('Final 폴더에 파일이 없습니다.');
                     } else {
                         if(confirm('다운로드 폴더에 저장합니다.\n[확인]을 누르시면 저장이 진행됩니다.')) {
-                            finalDownloadBtn.textContent = '다운로드 중...';
+                            finalDownloadBtn.textContent = '파일 준비 중 (잠시만 기다려주세요)...';
                             finalDownloadBtn.disabled = true;
 
                             for (const itemRef of res.items) {
                                 const url = await getDownloadURL(itemRef);
                                 
-                                // 브라우저 다운로드 속성을 활용한 다운로드 (CORS 이슈 회피)
-                                const a = document.createElement('a');
-                                a.style.display = 'none';
-                                a.href = url;
-                                a.download = itemRef.name; // 파일명 힌트
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
+                                try {
+                                    // 파일을 Blob으로 가져와서 "Final_" 없이 원래 이름으로 지정
+                                    const response = await fetch(url);
+                                    if (!response.ok) throw new Error('Fetch failed');
+                                    const blob = await response.blob();
+                                    const blobUrl = window.URL.createObjectURL(blob);
+                                    
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = blobUrl;
+                                    a.download = itemRef.name; // 원본 파일명 (예: 동호택시.mdb)
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(blobUrl);
+                                    document.body.removeChild(a);
+                                } catch (e) {
+                                    console.warn('CORS 에러 등으로 인한 다운로드 방식 대체:', e);
+                                    // 팝업 차단을 피하기 위해 target="_blank" 제외
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = itemRef.name;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }
 
                                 await new Promise(resolve => setTimeout(resolve, 1500));
                             }
